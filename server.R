@@ -85,11 +85,20 @@ server <- function(input, output) {
     }
   })
   
+  
+  songs_join = reactive({
+    return (
+      songs %>% 
+        left_join(finalists %>% mutate(finalist=T) %>% select(Contestant, finalist), by=join_by(contestant==Contestant))
+    )
+  })
+  
+  
+  
   output$songs = renderPlotly({
     if (input$SeasonSong == "All") {
       if (input$FinalistsOnly == F){
-        ggplotly(songs %>% 
-                   left_join(finalists %>% mutate(finalist=T) %>% select(Contestant, finalist), by=join_by(contestant==Contestant)) %>%
+        ggplotly(songs_join() %>% 
                    count(artist) %>% 
                    arrange(desc(n)) %>% 
                    top_n(10) %>% 
@@ -105,8 +114,7 @@ server <- function(input, output) {
         ) %>% 
           layout(hoverlabel=list(bgcolor="black"))
       } else {
-        ggplotly(songs %>% 
-                   left_join(finalists %>% mutate(finalist=T) %>% select(Contestant, finalist), by=join_by(contestant==Contestant)) %>%
+        ggplotly(songs_join() %>%
                    filter(finalist == T) %>% 
                    count(artist) %>% 
                    arrange(desc(n)) %>% 
@@ -125,9 +133,8 @@ server <- function(input, output) {
       }
     }
     else {
-      ggplotly(songs %>% 
+      ggplotly(songs_join() %>% 
                  mutate(season_adj = as.integer(substr(season, 8, 10))) %>% 
-                 left_join(finalists %>% mutate(finalist=T) %>% select(Contestant, finalist), by=join_by(contestant==Contestant)) %>%
                  filter(paste("Season", season_adj) == input$SeasonSong) %>% 
                  count(artist) %>% 
                  arrange(desc(n)) %>% 
